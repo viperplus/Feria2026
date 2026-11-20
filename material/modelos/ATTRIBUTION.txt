@@ -1,0 +1,6 @@
+﻿Sheep 3D model (animated, rigged)
+- Source: https://kilnstudio.tools/gallery/sheep/
+- Runtime GLB: https://assets.kilnstudio.tools/packs/farm/r36-local-review/models/sheep.glb
+- Author: Kiln / Kiln Commons (instruktlabs)
+- License: CC0-1.0 (Creative Commons Zero v1.0 Universal) for authored asset content - https://creativecommons.org/publicdomain/zero/1.0/
+- Animations: Idle, Walk, Graze

@@ -1,0 +1,2 @@
+Fuente material/fuentes/helvetiker_bold.typeface.json (cartel corpóreo «Feria de Turismo»)
+  Tomada de three.js r128 (examples/fonts), licencia MIT. Helvetiker: (c) 1990 Digital Equipment Corporation / typeface.js.

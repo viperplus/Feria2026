@@ -1,0 +1,6 @@
+material/mapa/rionegro.json (mesa con el mapa de Río Negro en el centro del gazebo)
+
+- Límites provinciales y departamentales: extraídos y simplificados de
+  https://github.com/mgaitan/departamentos_argentina (departamentos-argentina.topojson).
+- Sedes, coordenadas y orden de los corredores: mapa de corredores turísticos
+  https://github.com/viperplus/mapacorredsores (Wikiparajes).
