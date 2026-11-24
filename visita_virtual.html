@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Feria de Turismo - ESRN RURAL Virtual · Plaza 9 stands</title>
+<title>Feria de Turismo 2026 · ESRN Rural Virtual</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:100%;height:100%;overflow:hidden;background:#2b1b12;font-family:"Segoe UI",Arial,sans-serif;color:#4a2f1c;touch-action:none}
@@ -36,6 +36,9 @@
   #overlay h1{font-size:clamp(30px,5.4vw,50px);letter-spacing:3px;margin-bottom:7px;color:#4a2f1c;line-height:1.08}
   #overlay h1 small{display:block;font-size:clamp(12px,1.9vw,15px);letter-spacing:1.6px;color:#9a612f;margin-top:9px;font-weight:500}
   #overlay .sub{max-width:640px;color:#6d5238;line-height:1.55;margin-bottom:14px;font-size:15px}
+  #overlay .stats{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:-2px 0 14px}
+  #overlay .stats span{background:#a8532b;color:#fff8ea;border-radius:999px;padding:6px 13px;font-size:13.5px;font-weight:600}
+  #overlay .stats b{font-size:15px;margin-right:3px}
   #overlay .keys{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-bottom:18px}
   #overlay .keys span{background:#efe0c2;border:1px solid #d3b98f;border-radius:8px;padding:5px 10px;font-size:13px;color:#5b4128}
   .cfg{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;
@@ -378,18 +381,20 @@
 
 <div id="overlay">
   <div id="card">
-    <div id="badge">ESRN RURAL VIRTUAL · FERIA 2026 · PLAZA 9 STANDS · v47</div>
-    <h1>FERIA DE TURISMO<small>Río Negro · Rutas, sabores y voces de la escuela rural</small></h1>
-    <p class="sub">Recorré los 9 corredores turísticos y descubrí los trabajos, fotos y videos que
-       los estudiantes prepararon para la Feria de Laguna Blanca. Entrás directo a la plaza central: elegí a qué stand acercarte.
-       La calidad se ajusta sola para que ande fluida en tu computadora.</p>
+    <div id="badge">ESRN RURAL VIRTUAL · FERIA DE TURISMO 2026</div>
+    <h1>FERIA DE TURISMO<small>Río Negro · los trabajos de los estudiantes de la ESRN Rural Virtual</small></h1>
+    <p class="sub">Una plaza con un stand por cada corredor turístico de la provincia. En cada stand están
+       las fotos, los videos y las fichas que prepararon los estudiantes de las sedes. En el centro, un mapa
+       de Río Negro con todas las sedes: apuntá a una chinche para ver su trabajo.</p>
+    <div class="stats" id="stats"></div>
     <div class="keys">
       <span><b>W A S D</b> caminar</span>
       <span><b>← →</b> girar</span>
       <span><b>Mouse</b> mirar</span>
       <span><b>Shift</b> correr</span>
       <span><b>E</b> ficha</span>
-      <span><b>M</b> ir a…</span>
+      <span><b>M</b> ir a un stand</span>
+      <span><b>Clic</b> ver el trabajo</span>
       <span><b>V</b> 1.ª / 3.ª persona</span>
       <span><b>F</b> foto</span>
       <span><b>Esc</b> pausa</span>
@@ -454,7 +459,7 @@
 <div id="zoom"><img alt=""></div>
 
 <script>
-window.BUILD='plaza-lote41-20261124';
+window.BUILD='plaza-lote42-20261124';
 window.av=function(u){
   if(!u||/^https?:\/\//i.test(u)||/[?&]v=/.test(u))return u;
   return u+(u.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(window.BUILD);
@@ -4433,6 +4438,15 @@ function moverBanderines(time){
     var m=new THREE.Mesh(geo,mat);m.castShadow=cb.cast;m.receiveShadow=cb.recv;scene.add(m);nuevas++;
   });
   vlog('escenario fijo: '+cand.length+' piezas unidas en '+nuevas+' mallas');
+})();
+/* portada: los números salen del material cargado (se actualizan solos al sumar sedes) */
+(function(){
+  var el=document.getElementById('stats');if(!el)return;
+  var v=0,f=0,sedes=0;
+  Object.keys(MAT).forEach(function(k){sedes++;(MAT[k].items||[]).forEach(function(it){if(it.t==='video')v++;else if(it.t!=='audio')f++;});});
+  var total=CORREDORES.reduce(function(a,c){return a+c.sedes.length;},0);
+  el.innerHTML='<span><b>'+CORREDORES.length+'</b>corredores</span><span><b>'+sedes+'</b>de '+total+' sedes con trabajos</span>'+
+    '<span><b>'+v+'</b>videos</span><span><b>'+f+'</b>fotos</span>';
 })();
 /* calidad automática: mide la fluidez real y baja o sube la resolución y la calidad */
 var PERF={cuadro:0,prev:0,suma:0,n:0,cambio:0,buenas:0,aviso:false};
