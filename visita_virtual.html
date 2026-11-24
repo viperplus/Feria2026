@@ -378,11 +378,11 @@
 
 <div id="overlay">
   <div id="card">
-    <div id="badge">ESRN RURAL VIRTUAL · FERIA 2026 · PLAZA 9 STANDS · v46</div>
+    <div id="badge">ESRN RURAL VIRTUAL · FERIA 2026 · PLAZA 9 STANDS · v47</div>
     <h1>FERIA DE TURISMO<small>Río Negro · Rutas, sabores y voces de la escuela rural</small></h1>
     <p class="sub">Recorré los 9 corredores turísticos y descubrí los trabajos, fotos y videos que
        los estudiantes prepararon para la Feria de Laguna Blanca. Entrás directo a la plaza central: elegí a qué stand acercarte.
-       Si el equipo va lento, elegí <b>Calidad baja</b>.</p>
+       La calidad se ajusta sola para que ande fluida en tu computadora.</p>
     <div class="keys">
       <span><b>W A S D</b> caminar</span>
       <span><b>← →</b> girar</span>
@@ -397,8 +397,9 @@
     <div class="cfg">
       <label>Calidad
         <select id="qSel">
+          <option value="a">Automática (recomendada)</option>
           <option value="2">Alta</option>
-          <option value="1">Media (recomendada)</option>
+          <option value="1">Media</option>
           <option value="0">Baja</option>
         </select>
       </label>
@@ -453,7 +454,7 @@
 <div id="zoom"><img alt=""></div>
 
 <script>
-window.BUILD='plaza-lote40-20261124';
+window.BUILD='plaza-lote41-20261124';
 window.av=function(u){
   if(!u||/^https?:\/\//i.test(u)||/[?&]v=/.test(u))return u;
   return u+(u.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(window.BUILD);
@@ -519,9 +520,22 @@ scene.fog=new THREE.Fog(0xc9dbe6,130,330);
 var camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,0.05,400);
 camera.rotation.order='YXZ';
 
+/* ¿placa de video modesta? (Intel HD/UHD, móviles, poca memoria): arranca más liviano y sin suavizado */
+var GPU=(function(){
+  try{
+    var c=document.createElement('canvas'),gl=c.getContext('webgl')||c.getContext('experimental-webgl');
+    if(!gl)return {bajo:true,nombre:''};
+    var e=gl.getExtension('WEBGL_debug_renderer_info'),n=e?String(gl.getParameter(e.UNMASKED_RENDERER_WEBGL)):'';
+    var l=gl.getExtension('WEBGL_lose_context');if(l)l.loseContext();
+    var bajo=/(intel\(r\)? (hd|uhd)|hd graphics|uhd graphics|mali|adreno|powervr|swiftshader|llvmpipe|basic render|microsoft basic)/i.test(n)||
+      (navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)||(navigator.deviceMemory&&navigator.deviceMemory<=4);
+    return {bajo:!!bajo,nombre:n};
+  }catch(err){return {bajo:true,nombre:''};}
+})();
+function anisoMax(){return GPU.bajo?2:renderer.capabilities.getMaxAnisotropy();}
 var renderer;
 try{
-  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer=new THREE.WebGLRenderer({antialias:!GPU.bajo,powerPreference:'high-performance'});
 }catch(e){
   errBox.style.display='block';
   errBox.textContent='No se pudo iniciar WebGL. Probá otro navegador o activá la aceleración gráfica.';
@@ -587,7 +601,8 @@ scene.add(sun);
 })();
 
 /* ---------------- configuración ---------------- */
-var CFG={quality:1,sens:14,snd:true,view:1,musica:true};
+var CFG={quality:1,sens:14,snd:true,view:1,musica:true,auto:true};
+var PR_ESC=1;   /* escala de resolución que ajusta la calidad automática */
 try{
   var raw=localStorage.getItem('feria_cfg');
   if(raw){var co=JSON.parse(raw);
@@ -595,15 +610,21 @@ try{
     var sn=+co.sens;if(isFinite(sn))CFG.sens=Math.max(5,Math.min(30,sn));
     /* el sonido ambiente arranca siempre encendido: no se recuerda si se apagó en otra visita */
     if(co.view===3)CFG.view=3;
-    if(co.musica!==undefined)CFG.musica=!!co.musica;}
+    if(co.musica!==undefined)CFG.musica=!!co.musica;
+    if(co.auto===false)CFG.auto=false;}
 }catch(e){}
+if(CFG.auto)CFG.quality=GPU.bajo?0:1;
 function saveCfg(){try{localStorage.setItem('feria_cfg',JSON.stringify(CFG));}catch(e){}}
 function sensF(){return 0.0022*(CFG.sens/14);}
+function prBase(){var q=CFG.quality,d=window.devicePixelRatio||1;return q===2?Math.min(d,1.5):q===1?Math.min(d,1.2):1;}
+function aplicarResolucion(){renderer.setPixelRatio(Math.max(.5,prBase()*PR_ESC));renderer.setSize(innerWidth,innerHeight);}
 function applyQuality(){
   var q=CFG.quality;
-  renderer.setPixelRatio(q===2?Math.min(devicePixelRatio,1.5):q===1?1.2:1);
-  renderer.setSize(innerWidth,innerHeight);
+  aplicarResolucion();
   renderer.shadowMap.enabled=q>0;
+  renderer.shadowMap.type=q===2?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;
+  renderer.shadowMap.autoUpdate=false;      /* se actualizan a mano: cada cuadro en Alta, día por medio en Media */
+  if(typeof birds!=='undefined')birds.forEach(function(b){b.g.visible=q>0;});
   sun.castShadow=q>0;
   var sm=q===2?2048:q===1?1024:512;
   sun.shadow.mapSize.set(sm,sm);
@@ -639,7 +660,7 @@ function floorTex(){
   var small=document.createElement('canvas');small.width=small.height=256;
   small.getContext('2d').drawImage(c,0,0,256,256);
   var t=new THREE.CanvasTexture(small);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(10,17);
-  t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);return t;
+  t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(anisoMax(),4);return t;
 }
 function wallTex(seed,base,shade){
   var c=document.createElement('canvas');c.width=c.height=256;var x=c.getContext('2d');
@@ -656,7 +677,7 @@ function wallTex(seed,base,shade){
     var y=R()*256;x.beginPath();x.moveTo(0,y);x.lineTo(256,y+(R()-.5)*12);x.stroke();
   }
   var t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(2,1);
-  t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);return t;
+  t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(anisoMax(),4);return t;
 }
 var wallTexA=wallTex(23,'#f6ead6','#e9d6b6'),wallTexB=wallTex(29,'#e9d4ae','#d3b78c');
 function woodTex(){
@@ -677,7 +698,7 @@ function woodTex(){
   var small=document.createElement('canvas');small.width=small.height=256;
   small.getContext('2d').drawImage(c,0,0,256,256);
   var t=new THREE.CanvasTexture(small);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,3);
-  t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);return t;
+  t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(anisoMax(),4);return t;
 }
 function artTex(seed,palette){
   var r=rnd32(seed);
@@ -1054,7 +1075,7 @@ function fichaWallTex(f){
   x.fillStyle='#fff8ea';x.font='600 23px Segoe UI,Arial';x.textAlign='center';
   x.fillText('Clic para ver fotos, videos y la ficha completa  ·  ESRN RURAL Virtual',W/2,H-21);
   var t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;
-  t.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);return t;
+  t.anisotropy=Math.min(anisoMax(),8);return t;
 }
 function sedesTex(title,sub,lines){
   var c=document.createElement('canvas');c.width=960;c.height=280;var x=c.getContext('2d');
@@ -1421,6 +1442,7 @@ function makeVisitor(i){
   }
   var sc=kid?.68+R()*.1:.93+R()*.12;g.scale.setScalar(sc);
   scene.add(g);
+  fusionar(headG);fusionar(body);[armL,armR,legL,legR].forEach(function(l){fusionar(l);});
   return {g:g,body:body,headG:headG,arms:[armL,armR],legs:[legL,legR],kid:kid,R:R,poncho:conPoncho,
     speed:(kid?1.25:1.0)+R()*.3,ph:R()*6.28,yaw:0,headYaw:0,stride:0,
     state:'pick',wait:0,path:[],goal:null,stuck:0,gest:0,gestT:2+R()*5};
@@ -1487,6 +1509,9 @@ function turnTo(cur,target,rate,dt){
   return cur+Math.max(-rate*dt,Math.min(rate*dt,d));
 }
 function updateVisitor(n,dt,time){
+  /* lejos no se dibuja (igual sigue caminando) */
+  var lejos=Math.hypot(PX-n.g.position.x,PZ-n.g.position.z)>32;
+  if(n.g.visible===lejos)n.g.visible=!lejos;
   var gp=n.g.position,dPl=Math.hypot(PX-gp.x,PZ-gp.z),moving=false,lookYaw=null;
   if(n.state==='pick'){
     var goal=visitorGoal(n);
@@ -2186,15 +2211,9 @@ function bunting(ax,ay,az,bx,by,bz,sag,count){
     var t=(i+1)/(n+1);
     var p=curve.getPointAt(t);
     var tang=curve.getTangentAt(t).normalize();
-    var flag=new THREE.Mesh(tri,new THREE.MeshStandardMaterial({color:cols[i%cols.length],roughness:.85,side:THREE.DoubleSide}));
-    flag.position.copy(p);
-    flag.position.y-=0.01;
-    // orientar bandera a lo largo de la cuerda con leve variación
-    flag.rotation.y=Math.atan2(tang.x,tang.z);
-    flag.rotation.x=Math.sin(i*1.7)*0.12;
-    flag.rotation.z=Math.sin(i*2.3)*0.18;
-    flag.castShadow=true;scene.add(flag);
-    flagsAnim.push({m:flag,rx:flag.rotation.x,rz:flag.rotation.z,ph:i*.7+ax*.3+az*.2});
+    /* se juntan todos en un solo objeto instanciado (ver armarBanderines) */
+    flagsAnim.push({x:p.x,y:p.y-.01,z:p.z,ry:Math.atan2(tang.x,tang.z),rx:Math.sin(i*1.7)*0.12,rz:Math.sin(i*2.3)*0.18,
+      col:cols[i%cols.length],ph:i*.7+ax*.3+az*.2});
   }
 }
 
@@ -2536,7 +2555,7 @@ var screenObjs=SCREENS.map(function(s){
       if(s.poster){
         new THREE.TextureLoader().load(av(s.poster),function(t){
           t.encoding=THREE.sRGBEncoding;
-          t.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);
+          t.anisotropy=Math.min(anisoMax(),4);
           var old=o.posterTex;o.posterTex=t;
           if(mesh&&(!vid||vid.paused)&&mesh.material.map===old){mesh.material.map=t;mesh.material.needsUpdate=true;}
           if(old&&old!==t)old.dispose();
@@ -2600,6 +2619,7 @@ var screenObjs=SCREENS.map(function(s){
       lip(LT,s.h, (s.w/2+LT/2),0);
       if(s.kindVideo)grp.traverse(function(m){m.castShadow=false;m.receiveShadow=false;});
     }
+    fusionar(grp);
     scene.add(grp); o.mesh=grp; o.plane=mesh;
     if(vid){
       var ph=Math.sin(s.ry), pc=Math.cos(s.ry);
@@ -3273,9 +3293,11 @@ addEventListener('keydown',function(e){
 /* botones del HUD y configuración */
 var qSel=document.getElementById('qSel'),sensEl=document.getElementById('sens'),
     sndChk=document.getElementById('sndChk'),sndBtn2=document.getElementById('snd');
-qSel.value=String(CFG.quality);sensEl.value=String(CFG.sens);sndChk.checked=!!CFG.snd;
+qSel.value=CFG.auto?'a':String(CFG.quality);sensEl.value=String(CFG.sens);sndChk.checked=!!CFG.snd;
 qSel.addEventListener('change',function(){
-  CFG.quality=+qSel.value;saveCfg();applyQuality();
+  if(qSel.value==='a'){CFG.auto=true;PR_ESC=1;}
+  else{CFG.auto=false;CFG.quality=+qSel.value;PR_ESC=1;}
+  saveCfg();applyQuality();
   toast('Calidad: '+qSel.options[qSel.selectedIndex].text);
 });
 sensEl.addEventListener('input',function(){CFG.sens=+sensEl.value;saveCfg();});
@@ -3426,12 +3448,7 @@ function animate(){
   }
   updateNPCs(dt,time);
   updateBirds(dt,time);
-  if(CFG.quality>0){
-    var viento=.6+Math.sin(time*.23)*.4;
-    for(var fi=0;fi<flagsAnim.length;fi++){var fa=flagsAnim[fi];
-      fa.m.rotation.x=fa.rx+Math.sin(time*3.1+fa.ph)*.32*viento;
-      fa.m.rotation.z=fa.rz+Math.sin(time*2.3+fa.ph*1.7)*.12*viento;}
-  }
+  if(CFG.quality>0)moverBanderines(time);
   if(started&&sndOn&&actx&&time>nextChirp){chirp();nextChirp=time+4+Math.random()*9;}
   for(var si=0;si<spinners.length;si++)spinners[si].rotation.y+=dt*.35;
   dust.position.y=Math.sin(time*.6)*.04;
@@ -3474,6 +3491,8 @@ function animate(){
   syncHash(z);
 
   if(!uiOpen())updateScreens();
+  if(renderer.shadowMap.enabled&&(CFG.quality===2||(PERF.cuadro++&1)===0))renderer.shadowMap.needsUpdate=true;
+  medirRendimiento();
   renderer.render(scene,camera);
 }
 
@@ -3508,7 +3527,7 @@ function fasciaTex(cr,col){
   x.fillStyle='rgba(0,0,0,.25)';x.fillText(t,108,51);
   x.fillStyle='#fff8ea';x.fillText(t,106,49);
   var tx=new THREE.CanvasTexture(c);tx.encoding=THREE.sRGBEncoding;
-  tx.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);return tx;
+  tx.anisotropy=Math.min(anisoMax(),4);return tx;
 }
 function numDiscTex(n,col){
   var c=document.createElement('canvas');c.width=c.height=128;var x=c.getContext('2d');
@@ -3812,6 +3831,11 @@ if(DBG)window.__vv={sim:function(sec,vx,vz,yaw){var dt=1/60,mx=0,sh=npcs[0],log=
     }
     return {ventanas3sTrabado:stuck,donde:detail,velMediaCaminando:+(dist/Math.max(walkT,1e-3)).toFixed(2)};},
   escena:function(){return scene;},
+  perf:function(){var n={mallas:0,sombra:0,sprites:0,luces:0};scene.traverse(function(o){if(o.isMesh||o.isInstancedMesh){n.mallas++;if(o.castShadow)n.sombra++;}if(o.isSprite)n.sprites++;if(o.isLight)n.luces++;});
+    var i=renderer.info;return {draw:i.render.calls,tri:i.render.triangles,geo:i.memory.geometries,tex:i.memory.textures,prog:i.programs?i.programs.length:0,
+      pr:renderer.getPixelRatio(),w:renderer.domElement.width,h:renderer.domElement.height,sombras:renderer.shadowMap.enabled,objetos:n,npcs:npcs.length,colliders:colliders.length,slots:EXPO_SLOTS.length};},
+  tiempos:function(n){var t=[];for(var k=0;k<n;k++){var a=performance.now();renderer.render(scene,camera);renderer.getContext().finish();t.push(performance.now()-a);}t.sort(function(x,y){return x-y;});return {medianaMs:+t[t.length>>1].toFixed(2),peorMs:+t[t.length-1].toFixed(2)};},
+  logica:function(n){var a=performance.now();for(var k=0;k<n;k++){updateNPCs(1/60,k/60);updateScreens();}return +((performance.now()-a)/n).toFixed(3);},
   renderMus:function(seg,desde){return musRender(seg,desde);},mus:function(){return {on:MUS.on,gan:MUS.gain?+MUS.gain.gain.value.toFixed(4):null,duck:MUS.duck,ctx:actx&&actx.state,paso:MUS.paso};},cuerda:function(m){return cuerda(actx,m);},pins:function(){return mapaPins.map(function(h){return [h.userData.num,h.position.x,h.position.y,h.position.z,h.userData.conMat];});},visor:function(num,foto){var s=EXPO_SLOTS.filter(function(x){return String(x.num)===String(num)&&(foto?!!x.poster&&!x.kindVideo:!!x.ficha);})[0];if(s)openMediaModal(s);return !!s;},oveja:function(){return npcs[0];},
   simOveja:function(sec,vx,vz){var n=npcs[0],dt=1/60,giro=0,prev=n.yaw,vmax=0,pos=[];
     for(var i=0;i<sec*60;i++){if(!blocked(PX+vx*dt,PZ))PX+=vx*dt;if(!blocked(PX,PZ+vz*dt))PZ+=vz*dt;updateNPCs(dt,i*dt);
@@ -3954,7 +3978,7 @@ function dibujarMapa(G){
   x.fillStyle='rgba(74,47,28,.85)';x.font='18px Segoe UI,Arial';x.textAlign='right';
   x.fillText('● con material de los estudiantes · ○ sede · Fuentes: mapa de corredores (Wikiparajes) y límites departamentales',W-48,H-40);
   /* tablero vertical de dos caras: el mapa se ve derecho de los dos lados (norte arriba) */
-  var tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  var tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;tex.anisotropy=anisoMax();
   var M=MURAL,pw=M.ancho,ph=pw*H/W,yc=M.base+ph/2;
   var marco=new THREE.Mesh(new THREE.BoxGeometry(pw+.16,ph+.16,M.grosor),M.oscuro);
   marco.position.set(M.x,yc,M.z);marco.castShadow=true;marco.receiveShadow=true;scene.add(marco);
@@ -3967,26 +3991,37 @@ function dibujarMapa(G){
   });
   /* chinches: una por sede y por cara, en el color de su corredor */
   var hitGeo=new THREE.SphereGeometry(.07,8,6),hitMat=new THREE.MeshBasicMaterial({visible:false});
-  var aguMat=new THREE.MeshStandardMaterial({color:0xc9c9c9,metalness:.7,roughness:.3});
+  var aguMat=new THREE.MeshStandardMaterial({color:0xc9c9c9,metalness:.7,roughness:.3}),agujas=new THREE.Group(),cabezas=[];
   G.sedes.forEach(function(s){
     var q=P(s.lon,s.lat),u=-pw/2+q[0]/W*pw,y=yc+ph/2-q[1]/H*ph,cr=corDe[s.num],mm=MAT[String(s.num)];
     var col=s.principal?'#c4572a':(cr?colorDe[cr.n]:'#a8532b'),largo=s.principal?.07:.05;
     [1,-1].forEach(function(lado){
       var sup=M.z+lado*(M.grosor/2+.004),px=M.x+lado*u;
       var aguja=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,largo,6),aguMat);
-      aguja.rotation.x=Math.PI/2;aguja.position.set(px,y,sup+lado*largo/2);scene.add(aguja);
-      var cabeza=new THREE.Mesh(new THREE.SphereGeometry(s.principal?.038:.028,12,10),
-        new THREE.MeshStandardMaterial({color:new THREE.Color(col).convertSRGBToLinear(),roughness:.35,metalness:.1,
-          emissive:new THREE.Color(col).convertSRGBToLinear(),emissiveIntensity:0}));
-      cabeza.scale.z=.7;cabeza.position.set(px,y,sup+lado*largo);cabeza.castShadow=true;scene.add(cabeza);
-      var hit=new THREE.Mesh(hitGeo,hitMat);hit.position.copy(cabeza.position);scene.add(hit);
-      hit.userData={num:s.num,cabeza:cabeza,principal:!!s.principal,conMat:!!mm,
+      aguja.rotation.x=Math.PI/2;aguja.position.set(px,y,sup+lado*largo/2);agujas.add(aguja);
+      var ci=cabezas.length;cabezas.push({x:px,y:y,z:sup+lado*largo,r:s.principal?.038:.028,col:col});
+      var hit=new THREE.Mesh(hitGeo,hitMat);hit.position.set(px,y,sup+lado*largo);scene.add(hit);
+      hit.userData={num:s.num,ci:ci,principal:!!s.principal,conMat:!!mm,
         label:s.principal?'Viedma · sede central de la ESRN Rural Virtual':
           ('Sede '+s.num+' · '+(mm?mm.sede:s.nombre)+(cr?' · Corredor '+cr.n:'')+(mm?' — ver su trabajo':''))};
       mapaPins.push(hit);
     });
   });
+  fusionar(agujas);scene.add(agujas);
+  crearChinches(cabezas);
 }
+var CHINCHES=null,_cDummy=new THREE.Object3D();
+function crearChinches(lista){
+  var im=new THREE.InstancedMesh(new THREE.SphereGeometry(1,12,10),new THREE.MeshStandardMaterial({roughness:.35,metalness:.1}),lista.length);
+  lista.forEach(function(c,i){c.color=new THREE.Color(c.col).convertSRGBToLinear();ponerChinche(im,i,c,false);});
+  im.castShadow=true;scene.add(im);CHINCHES={im:im,lista:lista};
+}
+function ponerChinche(im,i,c,on){
+  var k=on?1.6:1;_cDummy.position.set(c.x,c.y,c.z);_cDummy.scale.set(c.r*k,c.r*k,c.r*.7*k);_cDummy.updateMatrix();
+  im.setMatrixAt(i,_cDummy.matrix);im.setColorAt(i,on?c.color.clone().lerp(new THREE.Color(1,1,1),.35):c.color);
+  im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;
+}
+function resaltarChinche(hit,on){if(CHINCHES)ponerChinche(CHINCHES.im,hit.userData.ci,CHINCHES.lista[hit.userData.ci],on);}
 /* ¿a qué chinche apunta la mira (o el dedo)? */
 function pinEn(sx,sy){
   if(!mapaPins.length)return null;
@@ -4002,9 +4037,9 @@ function actualizarPinMapa(){
     nuevo=(locked||freeLook)?pinEn(innerWidth/2,innerHeight/2):null;
   }else if(!cerca)nuevo=null;else nuevo=mapaPin;
   if(nuevo!==mapaPin){
-    if(mapaPin){mapaPin.userData.cabeza.scale.setScalar(1);mapaPin.userData.cabeza.material.emissiveIntensity=0;}
+    if(mapaPin)resaltarChinche(mapaPin,false);
     mapaPin=nuevo;
-    if(mapaPin){mapaPin.userData.cabeza.scale.setScalar(1.6);mapaPin.userData.cabeza.material.emissiveIntensity=.5;}
+    if(mapaPin)resaltarChinche(mapaPin,true);
   }
 }
 function abrirPin(hit){
@@ -4287,6 +4322,143 @@ document.addEventListener('visibilitychange',function(){
   if(ch){ch.checked=!!CFG.musica;ch.addEventListener('change',function(){setMusica(ch.checked);});}
   btn.addEventListener('click',function(){musicaIniciar();});
 })();
+
+/* =========================================================================
+   Rendimiento: menos objetos para dibujar y calidad que se ajusta sola.
+   ========================================================================= */
+/* Une en una sola malla (con colores por vértice) las piezas simples de un grupo
+   que no se mueven entre sí. Deja aparte las que tienen imagen, transparencia o doble cara. */
+var MAT_VC=null;
+function fusionar(grupo){
+  var ms=grupo.children.filter(function(m){
+    var mt=m.material;
+    return m.isMesh&&!m.isInstancedMesh&&!m.children.length&&mt&&!Array.isArray(mt)&&!mt.map&&!mt.transparent&&
+      mt.visible!==false&&mt.side===THREE.FrontSide&&m.geometry&&m.geometry.attributes.position;
+  });
+  if(ms.length<2)return null;
+  var pos=[],nor=[],col=[],sombra=false,recibe=false,c=new THREE.Color();
+  ms.forEach(function(m){
+    var g=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();
+    m.updateMatrix();g.applyMatrix4(m.matrix);
+    if(!g.attributes.normal)g.computeVertexNormals();
+    var p=g.attributes.position.array,nn=g.attributes.normal.array;
+    if(m.material.color)c.copy(m.material.color);else c.set(0xffffff);
+    for(var i=0;i<p.length;i++){pos.push(p[i]);nor.push(nn[i]);}
+    for(var k=0;k<p.length/3;k++)col.push(c.r,c.g,c.b);
+    if(m.castShadow)sombra=true;if(m.receiveShadow)recibe=true;
+    grupo.remove(m);g.dispose();
+  });
+  var geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  geo.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  if(!MAT_VC)MAT_VC=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8,metalness:.05});
+  var mesh=new THREE.Mesh(geo,MAT_VC);mesh.castShadow=sombra;mesh.receiveShadow=recibe;grupo.add(mesh);
+  return mesh;
+}
+/* todos los banderines de la feria en un solo objeto instanciado, que igual flamea */
+var BANDERINES=null,_bDummy=new THREE.Object3D();
+(function(){
+  if(!flagsAnim.length)return;
+  var tri=new THREE.BufferGeometry();
+  tri.setAttribute('position',new THREE.BufferAttribute(new Float32Array([-0.09,0,0, 0.09,0,0, 0,-0.22,0]),3));
+  tri.computeVertexNormals();
+  var im=new THREE.InstancedMesh(tri,new THREE.MeshStandardMaterial({roughness:.85,side:THREE.DoubleSide}),flagsAnim.length),cc=new THREE.Color();
+  flagsAnim.forEach(function(f,i){
+    _bDummy.position.set(f.x,f.y,f.z);_bDummy.rotation.set(f.rx,f.ry,f.rz);_bDummy.updateMatrix();
+    im.setMatrixAt(i,_bDummy.matrix);im.setColorAt(i,cc.set(f.col));
+  });
+  im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;
+  im.frustumCulled=false;scene.add(im);BANDERINES=im;
+})();
+var _bCuadro=0;
+function moverBanderines(time){
+  if(!BANDERINES||((_bCuadro++)&1))return;            /* flamean a 30 cuadros por segundo: alcanza */
+  var viento=.6+Math.sin(time*.23)*.4;
+  for(var i=0;i<flagsAnim.length;i++){var f=flagsAnim[i];
+    _bDummy.position.set(f.x,f.y,f.z);
+    _bDummy.rotation.set(f.rx+Math.sin(time*3.1+f.ph)*.32*viento,f.ry,f.rz+Math.sin(time*2.3+f.ph*1.7)*.12*viento);
+    _bDummy.updateMatrix();BANDERINES.setMatrixAt(i,_bDummy.matrix);}
+  BANDERINES.instanceMatrix.needsUpdate=true;
+}
+/* los objetos chiquitos no proyectan sombra (casi no se ven y duplican el trabajo) */
+(function(){
+  var v=new THREE.Vector3();
+  scene.traverse(function(o){
+    if(!o.isMesh||!o.castShadow||!o.geometry)return;
+    if(!o.geometry.boundingSphere)o.geometry.computeBoundingSphere();
+    o.getWorldScale(v);
+    if(o.geometry.boundingSphere.radius*Math.max(v.x,v.y,v.z)<.14)o.castShadow=false;
+  });
+})();
+/* une el escenario fijo (paredes, zócalos, mostradores, bancos, postes, gazebo…) en pocas mallas;
+   quedan aparte las cosas que se animan o cambian: luces que titilan, nubes, aves, cuadros y videos */
+(function(){
+  var excl=new Set();
+  clouds.forEach(function(o){excl.add(o);});
+  spinners.forEach(function(o){excl.add(o.parent&&o.parent!==scene?o.parent:o);});
+  bulbsAnim.forEach(function(b){excl.add(b.m);});
+  if(typeof birds!=='undefined')birds.forEach(function(b){excl.add(b.g);});
+  if(typeof screenObjs!=='undefined')screenObjs.forEach(function(o){[o.mesh,o.plaque,o.icon].forEach(function(x){if(x)excl.add(x);});});
+  function excluido(o){for(var x=o;x&&x!==scene;x=x.parent){if(excl.has(x)||x.visible===false)return true;}return false;}
+  var cubos={},v=new THREE.Color();
+  scene.updateMatrixWorld(true);
+  var cand=[];
+  scene.traverse(function(o){
+    if(!o.isMesh||o.isInstancedMesh||excluido(o))return;
+    var mt=o.material;
+    if(!mt||Array.isArray(mt)||mt.map||mt.transparent||mt.side!==THREE.FrontSide||mt.visible===false||mt.emissiveMap||mt.vertexColors)return;
+    if(mt.emissive&&(mt.emissive.r+mt.emissive.g+mt.emissive.b)>0&&(mt.emissiveIntensity||0)>0)return;
+    if(!mt.isMeshStandardMaterial&&!mt.isMeshBasicMaterial)return;
+    cand.push(o);
+  });
+  cand.forEach(function(o){
+    var mt=o.material,tipo=(mt.isMeshBasicMaterial?'b':mt.flatShading?'f':'s')+(o.castShadow?'1':'0')+(o.receiveShadow?'1':'0');
+    var cb=cubos[tipo]||(cubos[tipo]={pos:[],nor:[],col:[],basic:mt.isMeshBasicMaterial,flat:!!mt.flatShading,cast:o.castShadow,recv:o.receiveShadow});
+    var g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();
+    g.applyMatrix4(o.matrixWorld);if(!g.attributes.normal)g.computeVertexNormals();
+    var p=g.attributes.position.array,n=g.attributes.normal.array;v.copy(mt.color||v.set(0xffffff));
+    for(var i=0;i<p.length;i++){cb.pos.push(p[i]);cb.nor.push(n[i]);}
+    for(var k=0;k<p.length/3;k++)cb.col.push(v.r,v.g,v.b);
+    g.dispose();if(o.parent)o.parent.remove(o);
+  });
+  var nuevas=0;
+  Object.keys(cubos).forEach(function(k){
+    var cb=cubos[k],geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(cb.pos,3));
+    geo.setAttribute('normal',new THREE.Float32BufferAttribute(cb.nor,3));
+    geo.setAttribute('color',new THREE.Float32BufferAttribute(cb.col,3));
+    var mat=cb.basic?new THREE.MeshBasicMaterial({vertexColors:true}):
+      new THREE.MeshStandardMaterial({vertexColors:true,roughness:.8,metalness:.05,flatShading:cb.flat});
+    var m=new THREE.Mesh(geo,mat);m.castShadow=cb.cast;m.receiveShadow=cb.recv;scene.add(m);nuevas++;
+  });
+  vlog('escenario fijo: '+cand.length+' piezas unidas en '+nuevas+' mallas');
+})();
+/* calidad automática: mide la fluidez real y baja o sube la resolución y la calidad */
+var PERF={cuadro:0,prev:0,suma:0,n:0,cambio:0,buenas:0,aviso:false};
+function medirRendimiento(){
+  var ahora=performance.now(),d=PERF.prev?ahora-PERF.prev:0;PERF.prev=ahora;
+  if(!d||!CFG.auto||!started||document.hidden||d>250)return;       /* las pausas largas no cuentan */
+  PERF.suma+=d;PERF.n++;
+  if(PERF.suma<2500)return;
+  var prom=PERF.suma/PERF.n;PERF.suma=0;PERF.n=0;
+  if(ahora-PERF.cambio<3000)return;                                  /* deja asentar el último cambio */
+  if(prom>24){                                                        /* menos de ~42 cuadros por segundo */
+    PERF.buenas=0;
+    if(PR_ESC>.71){PR_ESC=Math.round((PR_ESC-.15)*100)/100;aplicarResolucion();}
+    else if(CFG.quality>0){CFG.quality--;applyQuality();}
+    else return;
+    PERF.cambio=ahora;vlog('calidad ↓ q'+CFG.quality+' res '+PR_ESC+' ('+prom.toFixed(1)+' ms)');
+    if(!PERF.aviso){PERF.aviso=true;toast('Ajustamos la calidad para que la feria ande fluida');}
+  }else if(prom<18.5){                                                /* fluida: si sobra, recupera */
+    if(++PERF.buenas<3)return;
+    PERF.buenas=0;
+    if(PR_ESC<1){PR_ESC=Math.min(1,Math.round((PR_ESC+.15)*100)/100);aplicarResolucion();PERF.cambio=ahora;}
+    else if(CFG.quality<(GPU.bajo?1:1)){CFG.quality++;applyQuality();PERF.cambio=ahora;}
+    else return;
+    vlog('calidad ↑ q'+CFG.quality+' res '+PR_ESC+' ('+prom.toFixed(1)+' ms)');
+  }else PERF.buenas=0;
+}
 
 applyQuality();
 animate();
