@@ -1,5 +1,297 @@
 /* Generado desde MATERIAL DE ESTUDIANTES FERIA DE TURISMO 2026. No editar a mano. */
 var MATERIALES={
+  "8": {
+    "sede": "Yaminué",
+    "corredor": 6,
+    "proyecto": "Expo Rural · ESRN Rural Virtual",
+    "poster": "material/posters/8.jpg",
+    "texto": "Fotos y videos de la Expo Rural de la sede, con maquetas, láminas y producciones de estudiantes de distintos años.",
+    "items": [
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_00.jpg",
+        "title": "Foto 1",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_01.jpg",
+        "title": "Foto 2",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_02.jpg",
+        "title": "Foto 3",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_03.jpg",
+        "title": "Foto 4",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_04.jpg",
+        "title": "Foto 5",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_05.jpg",
+        "title": "Foto 6",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_06.jpg",
+        "title": "Foto 7",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_07.jpg",
+        "title": "Foto 8",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_08.jpg",
+        "title": "Foto 9",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "video",
+        "src": "material/videos/8_video_1.mp4",
+        "title": "Video de la expo 1",
+        "wall": "material/wall/8_0.jpg",
+        "label": "VIDEO",
+        "wallSize": [
+          960,
+          540
+        ],
+        "aspect": 1.778,
+        "videoAspect": 1.778
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_09.jpg",
+        "title": "Foto 10",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_1.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_10.jpg",
+        "title": "Foto 11",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_11.jpg",
+        "title": "Foto 12",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_12.jpg",
+        "title": "Foto 13",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_13.jpg",
+        "title": "Foto 14",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_14.jpg",
+        "title": "Foto 15",
+        "label": "FOTO",
+        "aspect": 1,
+        "pared": false
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_15.jpg",
+        "title": "Foto 16",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_2.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_16.jpg",
+        "title": "Foto 17",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_3.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_17.jpg",
+        "title": "Foto 18",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_4.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_18.jpg",
+        "title": "Foto 19",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_5.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_19.jpg",
+        "title": "Foto 20",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_6.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_20.jpg",
+        "title": "Foto 21",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_7.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_21.jpg",
+        "title": "Foto 22",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_8.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_22.jpg",
+        "title": "Foto 23",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_9.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_23.jpg",
+        "title": "Foto 24",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_10.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_24.jpg",
+        "title": "Foto 25",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_11.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/8_foto_25.jpg",
+        "title": "Foto 26",
+        "label": "FOTO",
+        "aspect": 1,
+        "wall": "material/wall/8_12.jpg",
+        "wallSize": [
+          960,
+          960
+        ]
+      },
+      {
+        "t": "video",
+        "src": "material/videos/8_video_2.mp4",
+        "title": "Video de la expo 2",
+        "wall": "material/wall/8_13.jpg",
+        "label": "VIDEO",
+        "wallSize": [
+          960,
+          540
+        ],
+        "aspect": 1.778,
+        "videoAspect": 1.778
+      }
+    ],
+    "textoDetalle": "Yaminué\n“Expo Rural · ESRN Rural Virtual”\nMuestra escolar | Presentan: estudiantes de distintos años\n\nFotos y videos de la Expo Rural realizada en la sede el 3 de noviembre de 2026, con los trabajos de los estudiantes expuestos para las familias y la comunidad.\n\n¿Qué se vio en la expo?\n\nLenguajes artísticos, con trabajos de perspectiva, colores primarios, dibujo y color.\nMicrocine y autómatas de 2.º año.\nMaquetas sobre el efecto invernadero, la atmósfera y la hidrósfera, de 4.º año.\nLa fotosíntesis, un modelo de ADN y una lámina sobre la flora y la fauna de la estepa patagónica."
+  },
   "10": {
     "sede": "Aguada Guzmán",
     "corredor": 3,
