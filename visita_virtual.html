@@ -459,7 +459,7 @@
 <div id="zoom"><img alt=""></div>
 
 <script>
-window.BUILD='plaza-lote42-20261124';
+window.BUILD='plaza-lote43-20261124';
 window.av=function(u){
   if(!u||/^https?:\/\//i.test(u)||/[?&]v=/.test(u))return u;
   return u+(u.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(window.BUILD);
@@ -1650,8 +1650,8 @@ function makeSheepFollower(){
   scene.add(g);
   var npc={g:g,type:'sheep',yaw:Math.atan2(-1.2,1.8),ph:Math.random()*6.28,mixer:null,acts:null,
     spd:0,turn:0,side:Math.random()<.5?-1:1,stuck:0,still:0,graze:0,grazeT:0,wGraze:0,wWalk:0,
-    baaT:12+Math.random()*20,foot:0,footN:0,lastPX:PX,lastPZ:PZ,model:null};
-  npcs.push(npc);
+    baaT:12+Math.random()*20,foot:0,footN:0,lastPX:PX,lastPZ:PZ,model:null,mimo:0};
+  npcs.push(npc);OVEJA=npc;
   if(typeof THREE.GLTFLoader!=='function'){
     var body=new THREE.Mesh(new THREE.SphereGeometry(.4,12,10),
       new THREE.MeshStandardMaterial({color:0xf4f1e8,roughness:1}));
@@ -1686,8 +1686,62 @@ function makeSheepFollower(){
     }
   },undefined,function(){ /* falla de carga: se mantiene el contenedor vacío */ });
 }
+/* --- mimos a la ovejita: se queda quieta, te mira, se menea y le salen corazones --- */
+var OVEJA=null,CORAZONES=[],_texCorazon=null;
+function texCorazon(){
+  if(_texCorazon)return _texCorazon;
+  var c=document.createElement('canvas');c.width=c.height=64;var x=c.getContext('2d');
+  x.translate(32,34);x.beginPath();x.moveTo(0,18);
+  x.bezierCurveTo(-30,-2,-18,-28,0,-12);x.bezierCurveTo(18,-28,30,-2,0,18);x.closePath();
+  x.shadowColor='rgba(120,0,30,.35)';x.shadowBlur=4;x.fillStyle='#ff4f7a';x.fill();
+  x.shadowBlur=0;x.fillStyle='rgba(255,255,255,.55)';x.beginPath();x.ellipse(-9,-9,5,3.2,-.6,0,Math.PI*2);x.fill();
+  _texCorazon=new THREE.CanvasTexture(c);return _texCorazon;
+}
+function ovejaCerca(){
+  var n=OVEJA;if(!n||!n.g.parent)return false;
+  var dx=n.g.position.x-PX,dz=n.g.position.z-PZ,d=Math.hypot(dx,dz);
+  if(d>1.7)return false;
+  if(d<.9)return true;
+  return (dx*-Math.sin(YAW)+dz*-Math.cos(YAW))/d>.6;      /* la tenés adelante */
+}
+function acariciar(){
+  var n=OVEJA;if(!n)return;
+  n.mimo=2.2;n.graze=0;n.grazeT=3;n.corazonT=0;n.corazonN=0;
+  sonidoMimo();
+}
+function sonidoMimo(){
+  if(!sndOn)return;
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!actx)actx=new AC();if(actx.state==='suspended')actx.resume();
+    var t=actx.currentTime,notas=[587.33,739.99,880,1174.66];       /* re, fa#, la, re: suave y alegre */
+    notas.forEach(function(f,i){
+      var o=actx.createOscillator(),g=actx.createGain(),s=t+i*.11;
+      o.type='triangle';o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.035,s+.02);g.gain.exponentialRampToValueAtTime(.0001,s+.5);
+      o.connect(g);g.connect(actx.destination);o.start(s);o.stop(s+.55);
+    });
+  }catch(e){}
+}
+function soltarCorazon(n){
+  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:texCorazon(),transparent:true,depthWrite:false}));
+  var fx=Math.sin(n.yaw),fz=Math.cos(n.yaw);
+  sp.position.set(n.g.position.x+fx*.32+(Math.random()-.5)*.25,n.g.position.y+.78,n.g.position.z+fz*.32+(Math.random()-.5)*.25);
+  sp.scale.setScalar(.01);sp.renderOrder=5;scene.add(sp);
+  CORAZONES.push({s:sp,t:0,vida:1.5+Math.random()*.5,ph:Math.random()*6.28,tam:.16+Math.random()*.08});
+}
+function actualizarCorazones(dt){
+  for(var i=CORAZONES.length-1;i>=0;i--){
+    var c=CORAZONES[i];c.t+=dt;var k=c.t/c.vida;
+    if(k>=1){scene.remove(c.s);c.s.material.dispose();CORAZONES.splice(i,1);continue;}
+    c.s.position.y+=dt*.55;c.s.position.x+=Math.sin(c.t*5+c.ph)*dt*.12;
+    c.s.scale.setScalar(c.tam*Math.min(1,c.t*6)*(1+k*.3));
+    c.s.material.opacity=k<.6?1:1-(k-.6)/.4;
+  }
+}
 function updateSheep(n,dt,time){
   var gp=n.g.position;
+  actualizarCorazones(dt);
   /* velocidad suavizada del jugador y su rumbo de marcha (no hacia dónde mira la cámara) */
   var ivx=(PX-n.lastPX)/Math.max(dt,1e-3),ivz=(PZ-n.lastPZ)/Math.max(dt,1e-3);n.lastPX=PX;n.lastPZ=PZ;
   if(Math.hypot(ivx,ivz)>20){ivx=ivz=0;}               /* teletransporte: no cuenta como velocidad */
@@ -1724,6 +1778,11 @@ function updateSheep(n,dt,time){
     if(d>.7){desiredYaw=Math.atan2(dx,dz);want=Math.min(VMAX,plSpd*.9+(d-.6)*1.1);}
     else{desiredYaw=Math.atan2(fx,fz);want=Math.min(VMAX,plSpd);}
   }
+  if(n.mimo>0){                                    /* mimos: se queda, te mira y suelta corazones */
+    want=0;desiredYaw=Math.atan2(PX-gp.x,PZ-gp.z);turnRate=3;n.graze=0;
+    n.corazonT-=dt;
+    if(n.corazonT<=0&&n.corazonN<6){soltarCorazon(n);n.corazonN++;n.corazonT=.22+Math.random()*.12;}
+  }
   var prevYaw=n.yaw;
   n.yaw=turnTo(n.yaw,desiredYaw,turnRate,dt);
   var diff=desiredYaw-n.yaw;while(diff>Math.PI)diff-=Math.PI*2;while(diff<-Math.PI)diff+=Math.PI*2;
@@ -1754,6 +1813,10 @@ function updateSheep(n,dt,time){
   var yawRate=(n.yaw-prevYaw)/Math.max(dt,1e-3);
   n.turn+=(Math.max(-1,Math.min(1,yawRate))-n.turn)*Math.min(1,dt*6);
   n.g.rotation.set(0,n.yaw,-n.turn*.07*Math.min(1,n.spd/2));
+  if(n.mimo>0){                                    /* se menea contenta */
+    var mf=Math.min(1,n.mimo/.4,(2.2-n.mimo)/.2);
+    n.g.rotation.z+=Math.sin(time*13)*.07*mf;n.g.rotation.x=Math.sin(time*6.5)*.03*mf;
+  }
   /* quieta un rato: a veces pasta */
   if(n.spd<.15)n.still+=dt;else{n.still=0;n.graze=0;}
   if(n.still>2.5&&n.grazeT<=0&&dPl<5){n.graze=Math.random()<.6?1:0;n.grazeT=4+Math.random()*6;}
@@ -1781,6 +1844,7 @@ function updateSheep(n,dt,time){
   }else{
     gp.y=n.spd>.1?Math.abs(Math.sin(time*9+n.ph))*.05:Math.sin(time*1.6+n.ph)*.01;
   }
+  if(n.mimo>0){gp.y+=Math.abs(Math.sin(n.mimo*7))*.035*Math.min(1,n.mimo);n.mimo-=dt;}  /* saltitos de alegría */
 }
 
 function applyNPCs(){
@@ -2535,6 +2599,23 @@ function slotTex(s){
   x.fillText('Clic: ampliar',480,390);
   var t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
 }
+/* Las fotos se decodifican fuera del hilo principal (createImageBitmap) y se suben a la placa
+   de a una por cuadro, apenas cargan. Antes cada foto se decodificaba y subía la primera vez
+   que entraba en cámara: eso trababa la feria 20–50 ms cada vez que girabas hacia un stand. */
+var SUBIR_TEX=[];
+function cargarTextura(url,cb){
+  function clasico(){new THREE.TextureLoader().load(url,function(t){SUBIR_TEX.push(t);cb(t);});}
+  if(!window.createImageBitmap||!window.fetch){clasico();return;}
+  fetch(url).then(function(r){if(!r.ok)throw 0;return r.blob();})
+    .then(function(b){return createImageBitmap(b,{imageOrientation:'flipY'});})
+    .then(function(bmp){var t=new THREE.Texture(bmp);t.flipY=false;t.needsUpdate=true;SUBIR_TEX.push(t);cb(t);})
+    .catch(clasico);
+}
+function subirTexturas(){
+  if(!SUBIR_TEX.length)return;
+  var t0=performance.now();
+  while(SUBIR_TEX.length&&performance.now()-t0<4)renderer.initTexture(SUBIR_TEX.shift());
+}
 var use3D=(location.protocol==='http:'||location.protocol==='https:');
 var screenObjs=SCREENS.map(function(s){
   var o={s:s, el:null, mesh:null, icon:null, vid:null, pts:null, visible:false,
@@ -2558,7 +2639,7 @@ var screenObjs=SCREENS.map(function(s){
       var tx=tiny.getContext('2d');tx.fillStyle='#f3ead6';tx.fillRect(0,0,2,2);
       posterTex=new THREE.CanvasTexture(tiny);posterTex.encoding=THREE.sRGBEncoding;
       if(s.poster){
-        new THREE.TextureLoader().load(av(s.poster),function(t){
+        cargarTextura(av(s.poster),function(t){
           t.encoding=THREE.sRGBEncoding;
           t.anisotropy=Math.min(anisoMax(),4);
           var old=o.posterTex;o.posterTex=t;
@@ -2567,7 +2648,7 @@ var screenObjs=SCREENS.map(function(s){
         });
       }
     }
-    o.posterTex=posterTex;
+    o.posterTex=posterTex;SUBIR_TEX.push(posterTex);
     if(vid){
       document.body.appendChild(vid);
       vid.style.cssText='position:fixed;left:0;top:0;width:4px;height:4px;opacity:.02;pointer-events:none';
@@ -3266,6 +3347,7 @@ function openFichaModal(p){
 }
 function interact(){
   if(modalEl.classList.contains('show')){closeModal();return;}
+  if(!mapaPin&&ovejaCerca()){acariciar();return;}
   var st=nearStand();
   if(st){openStandModal(st);return;}
   var p=nearPOI();
@@ -3395,7 +3477,7 @@ var CAMINAR=2.6,CORRER=4.8,_tamV=new THREE.Vector2();
 var clock=new THREE.Clock(),stepPhase=0,nextChirp=6;
 function animate(){
   requestAnimationFrame(animate);
-  if(!running)return;
+  if(!running){subirTexturas();return;}          /* en la portada o en pausa: va subiendo las fotos */
   var dt=Math.min(clock.getDelta(),0.05);
   var len=0,time=clock.elapsedTime;
 
@@ -3485,6 +3567,7 @@ function animate(){
     var st=nearStand();
     actualizarPinMapa();
     if(mapaPin)pr=(isTouch?'':'[clic] ')+mapaPin.userData.label;
+    else if(ovejaCerca())pr='[E] Acariciar a la ovejita ♥';
     else if(p&&p.accion==='nav')pr='[E] Ir a un stand — o apuntá a una chinche del mapa';
     else if(st)pr='[E] Ver ficha — Puesto '+st.n;
     else if(p)pr='[E] Ver ficha — '+p.t;
@@ -3498,6 +3581,7 @@ function animate(){
   if(!uiOpen())updateScreens();
   if(renderer.shadowMap.enabled&&(CFG.quality===2||(PERF.cuadro++&1)===0))renderer.shadowMap.needsUpdate=true;
   medirRendimiento();
+  subirTexturas();
   renderer.render(scene,camera);
 }
 
@@ -3836,6 +3920,7 @@ if(DBG)window.__vv={sim:function(sec,vx,vz,yaw){var dt=1/60,mx=0,sh=npcs[0],log=
     }
     return {ventanas3sTrabado:stuck,donde:detail,velMediaCaminando:+(dist/Math.max(walkT,1e-3)).toFixed(2)};},
   escena:function(){return scene;},
+  ev:function(s){return eval(s);},
   perf:function(){var n={mallas:0,sombra:0,sprites:0,luces:0};scene.traverse(function(o){if(o.isMesh||o.isInstancedMesh){n.mallas++;if(o.castShadow)n.sombra++;}if(o.isSprite)n.sprites++;if(o.isLight)n.luces++;});
     var i=renderer.info;return {draw:i.render.calls,tri:i.render.triangles,geo:i.memory.geometries,tex:i.memory.textures,prog:i.programs?i.programs.length:0,
       pr:renderer.getPixelRatio(),w:renderer.domElement.width,h:renderer.domElement.height,sombras:renderer.shadowMap.enabled,objetos:n,npcs:npcs.length,colliders:colliders.length,slots:EXPO_SLOTS.length};},
