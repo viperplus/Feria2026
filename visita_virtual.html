@@ -262,6 +262,26 @@
   .mv-extra .mv-note{background:#f3e4c8;color:#6d5238;border-radius:10px;padding:9px 12px}
   .mv-extra .mv-link{color:#8a4b2a}
   .mv-solo .fr{max-width:760px}
+  /* proyecto turístico (informe en PDF) */
+  .pt-card{background:#fff8ea;border:1px solid #e2c9a2;border-left:5px solid var(--c,#a8532b);border-radius:12px;
+    padding:14px 16px;margin:0 0 18px;max-width:760px;box-shadow:0 2px 8px rgba(74,47,28,.08)}
+  .fr+.pt-card{margin:20px 0 0}
+  .pt-tag{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#8a4b2a}
+  .pt-card h4{margin:6px 0 4px;font-size:19px;color:#3b2414}
+  .pt-res{margin:4px 0 8px;line-height:1.5;font-size:14.5px}
+  .pt-mas{margin:4px 0 10px}
+  .pt-mas summary{cursor:pointer;color:#8a4b2a;font-weight:600;font-size:14px}
+  .pt-mas .fr{margin-top:10px}
+  .pt-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .pt-leer,.pt-baja{font:600 14px Segoe UI,Arial;border-radius:999px;padding:8px 16px;cursor:pointer;text-decoration:none}
+  .pt-leer{background:var(--c,#a8532b);color:#fff8ea;border:none}
+  .pt-baja{background:transparent;color:#8a4b2a;border:1.5px solid #c9a27a}
+  .pt-leer:hover,.pt-baja:hover{filter:brightness(1.08)}
+  .pt-lector{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;background:#3b2414;border-radius:inherit;overflow:hidden}
+  .pt-lbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:#4a2f1c}
+  .pt-lbar a{color:#ffd78f;font-size:13.5px}
+  .pt-volver{background:#f7ead2;color:#4a2f1c;border:none;border-radius:999px;padding:7px 14px;font:600 14px Segoe UI,Arial;cursor:pointer}
+  .pt-lector iframe{flex:1;border:0;width:100%;background:#fff}
   /* ficha con estructura */
   .fr{color:#4a2f1c;max-width:70ch}
   .fr-titulo{font-size:19px;font-weight:700;color:#8a4b2a;margin-bottom:8px}
@@ -384,7 +404,7 @@
     <div id="badge">ESRN RURAL VIRTUAL · FERIA DE TURISMO 2026</div>
     <h1>FERIA DE TURISMO<small>Río Negro · los trabajos de los estudiantes de la ESRN Rural Virtual</small></h1>
     <p class="sub">Una plaza con un stand por cada corredor turístico de la provincia. En cada stand están
-       las fotos, los videos y las fichas que prepararon los estudiantes de las sedes. En el centro, un mapa
+       las fotos, los videos, las fichas y los proyectos turísticos que prepararon los estudiantes de las sedes. En el centro, un mapa
        de Río Negro con todas las sedes: apuntá a una chinche para ver su trabajo.</p>
     <div class="stats" id="stats"></div>
     <div class="keys">
@@ -459,7 +479,7 @@
 <div id="zoom"><img alt=""></div>
 
 <script>
-window.BUILD='plaza-lote44-20261124';
+window.BUILD='plaza-lote45-20261124';
 window.av=function(u){
   if(!u||/^https?:\/\//i.test(u)||/[?&]v=/.test(u))return u;
   return u+(u.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(window.BUILD);
@@ -483,6 +503,7 @@ window.av0=function(u){return u+(u.indexOf('?')>=0?'&':'?')+'t='+Date.now();};
 <script>if(typeof THREE==='undefined')document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
 <script>document.write('<script src="'+av('GLTFLoader.js')+'"><\/script>');</script>
 <script>document.write('<script src="'+av('materiales.js')+'"><\/script>');</script>
+<script>document.write('<script src="'+av('proyectos.js')+'"><\/script>');</script>
 <script>
 (function(){
 'use strict';
@@ -509,6 +530,21 @@ function versionarMAT(M){
   return M;
 }
 var MAT=versionarMAT((typeof MATERIALES==='undefined')?{}:MATERIALES);
+/* proyectos turísticos (informes en PDF): se suman a la sede; si la sede no tenía material, la crean */
+(function(){
+  if(typeof PROYECTOS==='undefined')return;
+  var SEDE_DE={"1":["Chelforó",7],"9":["Cerro Policía",3],"14":["Río Chico",5],"16":["Aguada Cecilio",8],"21":["Cona Niyeu",8],"32":["Valle Verde",2]};
+  Object.keys(PROYECTOS).forEach(function(k){
+    var p=PROYECTOS[k];p.pdf=av(p.pdf);
+    var m=MAT[k];
+    if(!m){
+      var sd=SEDE_DE[k];if(!sd)return;
+      m=MAT[k]={sede:sd[0],corredor:sd[1],proyecto:p.titulo,texto:p.resumen,items:[],textoDetalle:p.detalle};
+      if(typeof MATERIALES!=='undefined'&&MATERIALES!==MAT)MATERIALES[k]=m;
+    }
+    m.ptur=p;
+  });
+})();
 var errBox=document.getElementById('err');
 if(typeof THREE==='undefined'){
   errBox.style.display='block';
@@ -2417,6 +2453,8 @@ for(var si=0;si<SALAS.length;si++){
         else fotos.push({sd:sd,mm:mm,it:it,idx:i});
       });
       textos.push({sd:sd,mm:mm});
+      /* la sede ya tenía su ficha: el proyecto turístico va en un cuadro aparte */
+      if(mm.ptur&&mm.textoDetalle!==mm.ptur.detalle)textos.push({sd:sd,mm:mm,ptur:mm.ptur});
     });
     /* videos: mismo marco, pero con la proporcion real de la grabacion */
     if(vids.length){
@@ -2445,6 +2483,7 @@ for(var si=0;si<SALAS.length;si++){
     function colgar(lista,lx,ry,lado){
       var filas=Math.ceil(lista.length/5), hG=filas>1?0.86:1.70;
       var span=(lado==='fondo'?W:D)-.6;
+      if(lado==='fondo'&&vids.length)span-=1.0;     /* deja libres las esquinas: ahí llegan los videos de los costados */
       for(var row=0;row<filas;row++){
         var linea=lista.slice(row*5,(row+1)*5);
         var anchos=linea.map(function(g){
@@ -2462,6 +2501,10 @@ for(var si=0;si<SALAS.length;si++){
           if(g.it){
             base.poster=g.it.wall||g.mm.poster;
             base.label='SEDE '+g.sd.num+' · '+g.it.label;
+          }else if(g.ptur){
+            base.ficha={num:g.sd.num,sede:g.mm.sede,proyecto:'Proyecto turístico: '+g.ptur.titulo,texto:g.ptur.resumen,cor:cr.n,
+                        t:'SEDE '+g.sd.num+' · '+g.mm.sede,s:'PROYECTO TURÍSTICO'};
+            base.label='SEDE '+g.sd.num+' · Proyecto turístico';base.verProyecto=true;
           }else{
             base.ficha={num:g.sd.num,sede:g.mm.sede,proyecto:g.mm.proyecto,texto:g.mm.texto,cor:cr.n,
                         t:'SEDE '+g.sd.num+' · '+g.mm.sede,s:'PROYECTO',
@@ -3179,6 +3222,19 @@ function openMediaModal(s){
   var col=cr?colorCorr(cr):'#a8532b',num=s.num||'';
   var ficha=window.FICHA_RICA?window.FICHA_RICA.html(s.full,{proyecto:s.proyecto,fuente:s.fuente})
     :'<div class="detalle">'+fmtFull(s.full||'')+'</div>';
+  /* proyecto turístico de la sede: tarjeta con el informe en PDF */
+  var mmS=MAT[String(s.num)],pt=mmS&&mmS.ptur;
+  if(pt){
+    var propio=mmS.textoDetalle===pt.detalle;   /* la ficha ya es el proyecto */
+    var cuerpo=propio?'':'<p class="pt-res">'+esc(pt.resumen)+'</p>'+
+      '<details class="pt-mas"'+(s.verProyecto?' open':'')+'><summary>Ver el proyecto resumido</summary>'+
+      (window.FICHA_RICA?window.FICHA_RICA.html(pt.detalle,{proyecto:pt.titulo}):'<div class="detalle">'+fmtFull(pt.detalle)+'</div>')+'</details>';
+    var tarjeta='<div class="pt-card"><div class="pt-tag">📄 Proyecto turístico comunitario</div>'+
+      (propio?'':'<h4>'+esc(pt.titulo)+'</h4>')+cuerpo+
+      '<div class="pt-btns"><button type="button" class="pt-leer" data-pdf="'+esc(pt.pdf)+'">Leer el informe completo</button>'+
+      '<a class="pt-baja" href="'+esc(pt.pdf)+'" download="Proyecto turístico '+esc(pt.titulo)+' - '+esc(mmS.sede)+'.pdf">⬇ Descargar PDF</a></div></div>';
+    ficha=s.verProyecto||propio?tarjeta+ficha:ficha+tarjeta;
+  }
   var media='',nv=slides.filter(function(x){return x.vid;}).length;
   if(slides.length){
     media+='<div class="mv-stage"><img class="mv-big" id="mvBig" alt="">'+
@@ -3231,9 +3287,22 @@ function openMediaModal(s){
     if(t.id==='mvNext'){show(cur+1);return;}
     var th=t.closest('[data-i]');if(th){show(+th.dataset.i);return;}
     if(t.id==='mvBig'){var z=document.getElementById('zoom');z.querySelector('img').src=t.src;z.classList.add('show');return;}
+    var lp=t.closest('.pt-leer');if(lp){leerPDF(lp.dataset.pdf);return;}
+    if(t.closest('.pt-volver')){var lc=mbox.querySelector('.pt-lector');if(lc)lc.remove();return;}
     var b=t.closest('[data-sede],[data-link]');if(!b)return;
     if(b.dataset.link){copyLink(b.dataset.link);return;}
   };
+}
+/* informe en PDF: en la computadora se lee dentro del visor; en el celular se abre aparte */
+function leerPDF(url){
+  if(isTouch){window.open(url,'_blank','noopener');return;}
+  try{var vid=document.getElementById('mvVid');if(vid)vid.pause();}catch(e){}
+  if(getComputedStyle(mbox).position==='static')mbox.style.position='relative';
+  var d=document.createElement('div');d.className='pt-lector';
+  d.innerHTML='<div class="pt-lbar"><button type="button" class="pt-volver">← Volver al trabajo</button>'+
+    '<a href="'+esc(url)+'" target="_blank" rel="noopener">Abrir en otra pestaña ↗</a></div>'+
+    '<iframe src="'+esc(url)+'#view=FitH" title="Informe del proyecto"></iframe>';
+  mbox.appendChild(d);
 }
 modalEl.addEventListener('click',function(e){if(e.target===modalEl)closeModal();});
 function toast(msg,gold){
@@ -4506,7 +4575,8 @@ function moverBanderines(time){
   Object.keys(MAT).forEach(function(k){sedes++;(MAT[k].items||[]).forEach(function(it){if(it.t==='video')v++;else if(it.t!=='audio')f++;});});
   var total=CORREDORES.reduce(function(a,c){return a+c.sedes.length;},0);
   el.innerHTML='<span><b>'+CORREDORES.length+'</b>corredores</span><span><b>'+sedes+'</b>de '+total+' sedes con trabajos</span>'+
-    '<span><b>'+v+'</b>videos</span><span><b>'+f+'</b>fotos</span>';
+    '<span><b>'+v+'</b>videos</span><span><b>'+f+'</b>fotos</span>'+
+    (typeof PROYECTOS!=='undefined'?'<span><b>'+Object.keys(PROYECTOS).length+'</b>proyectos turísticos</span>':'');
 })();
 /* calidad automática: mide la fluidez real y baja o sube la resolución y la calidad */
 var PERF={cuadro:0,prev:0,suma:0,n:0,cambio:0,buenas:0,aviso:false};
