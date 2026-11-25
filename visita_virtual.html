@@ -498,7 +498,7 @@
 <div id="zoom"><img alt=""></div>
 
 <script>
-window.BUILD='plaza-lote47-20261125';
+window.BUILD='plaza-lote48-20261125';
 window.av=function(u){
   if(!u||/^https?:\/\//i.test(u)||/[?&]v=/.test(u))return u;
   return u+(u.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(window.BUILD);
@@ -1743,8 +1743,16 @@ function ovejaCerca(){
   var n=OVEJA;if(!n||!n.g.parent)return false;
   var dx=n.g.position.x-PX,dz=n.g.position.z-PZ,d=Math.hypot(dx,dz);
   if(d>1.7)return false;
-  if(d<.9)return true;
+  if(d<(isTouch?1.4:.9))return true;
   return (dx*-Math.sin(YAW)+dz*-Math.cos(YAW))/d>.6;      /* la tenés adelante */
+}
+/* en el celular: tocar a la ovejita en la pantalla (si está a unos pasos) */
+var _rcOveja=new THREE.Raycaster(),_v2Oveja=new THREE.Vector2();
+function ovejaTocada(x,y){
+  var n=OVEJA;if(!n||!n.g.parent)return false;
+  if(Math.hypot(n.g.position.x-PX,n.g.position.z-PZ)>4)return false;
+  _v2Oveja.set(x/innerWidth*2-1,-(y/innerHeight)*2+1);_rcOveja.setFromCamera(_v2Oveja,camera);
+  return _rcOveja.intersectObject(n.g,true).length>0;
 }
 function acariciar(){
   var n=OVEJA;if(!n)return;
@@ -2854,7 +2862,7 @@ renderer.domElement.addEventListener('touchmove',function(e){
 renderer.domElement.addEventListener('touchend',function(){
   if(tapInfo&&!tapInfo.moved&&Date.now()-tapInfo.t<400){
     var pinT=Math.hypot(PX-MESA.x,PZ-MESA.z)<7?pinEn(tapInfo.x,tapInfo.y):null;
-    if(pinT)abrirPin(pinT);else hitScreen(tapInfo.x,tapInfo.y);
+    if(pinT)abrirPin(pinT);else if(ovejaTocada(tapInfo.x,tapInfo.y))acariciar();else hitScreen(tapInfo.x,tapInfo.y);
   }
   tapInfo=null;
 },{passive:true});
@@ -3637,7 +3645,9 @@ function animate(){
   }
   if(isTouch&&pr)pr=pr.replace('[E] ','');
   if(promptEl.textContent!==pr){promptEl.textContent=pr;promptEl.classList.toggle('show',!!pr);
-    if(bActEl)bActEl.classList.toggle('show',!!pr);}
+    if(bActEl){bActEl.classList.toggle('show',!!pr);
+      var bt=mapaPin?'Ver trabajo':/ovejita/.test(pr)?'♥ Acariciar':/Ir a un stand/.test(pr)?'Ir a un stand':'Ver ficha';
+      if(bActEl.textContent!==bt)bActEl.textContent=bt;}}
   drawMini();
   syncHash(z);
 
