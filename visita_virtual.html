@@ -17,8 +17,11 @@
     align-items:center;justify-content:center;text-align:center;
     background:radial-gradient(ellipse at 50% 4%,rgba(255,214,150,.3),transparent 55%),
       linear-gradient(180deg,#3a2418 0%,#6b3f24 48%,#8a5a33 100%);
-    padding:24px;transition:opacity .4s;overflow:auto
+    padding:24px;transition:opacity .4s;overflow:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain
   }
+  /* centrado seguro: si la portada no entra en la pantalla, se puede bajar y no se corta arriba */
+  #overlay>#card{margin:auto 0;flex:none}
   #overlay:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.12;
     background:repeating-linear-gradient(135deg,rgba(255,240,210,.2) 0 2px,transparent 2px 18px)}
   #overlay.hide{opacity:0;pointer-events:none}
@@ -391,6 +394,23 @@
     #zone{font-size:11px;max-width:52vw;padding:7px 10px}
     .ccard{flex-wrap:wrap}.cacts{flex-direction:row;width:100%}
   }
+  /* portada en el celular: más compacta y sin la lista de teclas */
+  body.touch #overlay .keys{display:none}
+  @media (max-width:640px),(max-height:560px){
+    #overlay{padding:12px 10px}
+    #card{padding:0 16px 18px;border-radius:18px}
+    #card:before{height:44px;margin:0 -16px 14px}
+    #badge{font-size:9px;letter-spacing:2px;padding:5px 10px;margin-bottom:9px}
+    #overlay h1{font-size:26px;letter-spacing:1.5px}
+    #overlay h1 small{font-size:12px;margin-top:6px}
+    #overlay .sub{font-size:13.5px;line-height:1.45;margin-bottom:10px}
+    #overlay .stats{gap:6px;margin-bottom:10px}
+    #overlay .stats span{font-size:12px;padding:5px 10px}
+    #overlay .stats b{font-size:13px}
+    .cfg{gap:8px 14px;padding:8px 10px;margin-bottom:12px}
+    .cfg label{font-size:13px}
+    #btn{padding:14px 30px;font-size:18px;letter-spacing:1px;width:100%;max-width:340px}
+  }
   @media (prefers-reduced-motion:reduce){#btn{animation:none}#fade{transition:none}}
   .hbtn:focus-visible,.go:focus-visible,.chip:focus-visible,button.sec:focus-visible,#btn:focus-visible{outline:3px solid #e9c46a;outline-offset:2px}
 </style>
@@ -479,7 +499,7 @@
 <div id="zoom"><img alt=""></div>
 
 <script>
-window.BUILD='plaza-lote45-20261124';
+window.BUILD='plaza-lote46-20261125';
 window.av=function(u){
   if(!u||/^https?:\/\//i.test(u)||/[?&]v=/.test(u))return u;
   return u+(u.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(window.BUILD);
