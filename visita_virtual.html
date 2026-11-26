@@ -498,7 +498,7 @@
 <div id="zoom"><img alt=""></div>
 
 <script>
-window.BUILD='plaza-lote50-20261126';
+window.BUILD='plaza-lote51-20261126';
 window.av=function(u){
   if(!u||/^https?:\/\//i.test(u)||/[?&]v=/.test(u))return u;
   return u+(u.indexOf('?')>=0?'&':'?')+'v='+encodeURIComponent(window.BUILD);
@@ -587,12 +587,24 @@ var GPU=(function(){
     if(!gl)return {bajo:true,nombre:''};
     var e=gl.getExtension('WEBGL_debug_renderer_info'),n=e?String(gl.getParameter(e.UNMASKED_RENDERER_WEBGL)):'';
     var l=gl.getExtension('WEBGL_lose_context');if(l)l.loseContext();
-    var bajo=/(intel\(r\)? (hd|uhd)|hd graphics|uhd graphics|mali|adreno|powervr|swiftshader|llvmpipe|basic render|microsoft basic)/i.test(n)||
+    /* integradas: cualquier Intel, Radeon integradas (Vega, "Radeon Graphics"), GeForce MX, móviles y software */
+    var bajo=/(intel|radeon\(tm\) graphics|radeon graphics|vega \d|radeon r[2-7]|geforce mx|mali|adreno|powervr|apple gpu|swiftshader|llvmpipe|basic render|microsoft basic)/i.test(n)||
       (navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)||(navigator.deviceMemory&&navigator.deviceMemory<=4);
-    return {bajo:!!bajo,nombre:n};
+    var rec=false;try{rec=localStorage.getItem('feria_liviano')==='1';}catch(e){}
+    if(/[?&]liviano=1/.test(location.search))rec=true;
+    if(/[?&]liviano=0/.test(location.search)){bajo=false;rec=false;}
+    return {bajo:!!(bajo||rec),nombre:n};
   }catch(err){return {bajo:true,nombre:''};}
 })();
 function anisoMax(){return GPU.bajo?2:renderer.capabilities.getMaxAnisotropy();}
+if(GPU.bajo)(function(){
+  var Std=THREE.MeshStandardMaterial,ok=new THREE.MeshLambertMaterial();
+  var M=function(par){
+    var q={};if(par)for(var k in par)if(k in ok&&k!=='envMap')q[k]=par[k];
+    return new THREE.MeshLambertMaterial(q);
+  };
+  M.prototype=Std.prototype;THREE.MeshStandardMaterial=M;
+})();
 var renderer;
 try{
   renderer=new THREE.WebGLRenderer({antialias:!GPU.bajo,powerPreference:'high-performance'});
@@ -655,6 +667,7 @@ scene.add(sun);
   var eq=new THREE.CanvasTexture(c);
   eq.mapping=THREE.EquirectangularReflectionMapping;
   eq.encoding=THREE.sRGBEncoding;
+  if(GPU.bajo){eq.dispose();scene.add(new THREE.AmbientLight(0xfff4e6,.55));return;}
   var pmrem=new THREE.PMREMGenerator(renderer);
   scene.environment=pmrem.fromEquirectangular(eq).texture;
   pmrem.dispose();eq.dispose();
@@ -1557,7 +1570,7 @@ function turnTo(cur,target,rate,dt){
 }
 function updateVisitor(n,dt,time){
   /* lejos no se dibuja (igual sigue caminando) */
-  var lejos=Math.hypot(PX-n.g.position.x,PZ-n.g.position.z)>32;
+  var lejos=Math.hypot(PX-n.g.position.x,PZ-n.g.position.z)>(GPU.bajo?22:32);
   if(n.g.visible===lejos)n.g.visible=!lejos;
   var gp=n.g.position,dPl=Math.hypot(PX-gp.x,PZ-gp.z),moving=false,lookYaw=null;
   if(n.state==='pick'){
@@ -4572,7 +4585,7 @@ function moverBanderines(time){
     var mt=o.material;
     if(!mt||Array.isArray(mt)||mt.map||mt.transparent||mt.side!==THREE.FrontSide||mt.visible===false||mt.emissiveMap||mt.vertexColors)return;
     if(mt.emissive&&(mt.emissive.r+mt.emissive.g+mt.emissive.b)>0&&(mt.emissiveIntensity||0)>0)return;
-    if(!mt.isMeshStandardMaterial&&!mt.isMeshBasicMaterial)return;
+    if(!mt.isMeshStandardMaterial&&!mt.isMeshLambertMaterial&&!mt.isMeshBasicMaterial)return;
     cand.push(o);
   });
   cand.forEach(function(o){
@@ -4618,16 +4631,16 @@ function medirRendimiento(){
   if(ahora-PERF.cambio<3000)return;                                  /* deja asentar el último cambio */
   if(prom>24){                                                        /* menos de ~42 cuadros por segundo */
     PERF.buenas=0;
-    if(PR_ESC>.71){PR_ESC=Math.round((PR_ESC-.15)*100)/100;aplicarResolucion();}
-    else if(CFG.quality>0){CFG.quality--;applyQuality();}
-    else return;
+    if(CFG.quality>0){CFG.quality--;PERF.bajo=true;applyQuality();}
+    else if(PR_ESC>.71){PR_ESC=Math.round((PR_ESC-.15)*100)/100;aplicarResolucion();}
+    else{ if(!GPU.bajo){try{localStorage.setItem('feria_liviano','1');}catch(e){}} return;}
     PERF.cambio=ahora;vlog('calidad ↓ q'+CFG.quality+' res '+PR_ESC+' ('+prom.toFixed(1)+' ms)');
     if(!PERF.aviso){PERF.aviso=true;toast('Ajustamos la calidad para que la feria ande fluida');}
   }else if(prom<18.5){                                                /* fluida: si sobra, recupera */
     if(++PERF.buenas<3)return;
     PERF.buenas=0;
     if(PR_ESC<1){PR_ESC=Math.min(1,Math.round((PR_ESC+.15)*100)/100);aplicarResolucion();PERF.cambio=ahora;}
-    else if(CFG.quality<(GPU.bajo?1:1)){CFG.quality++;applyQuality();PERF.cambio=ahora;}
+    else if(!PERF.bajo&&CFG.quality<1){CFG.quality++;applyQuality();PERF.cambio=ahora;}
     else return;
     vlog('calidad ↑ q'+CFG.quality+' res '+PR_ESC+' ('+prom.toFixed(1)+' ms)');
   }else PERF.buenas=0;
