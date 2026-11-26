@@ -516,9 +516,21 @@ var MATERIALES={
           890
         ],
         "aspect": 1.573
+      },
+      {
+        "t": "image",
+        "src": "material/fotos/14_4_dia_de_campo.jpg",
+        "title": "Día de Campo · Plan de negocios — Matías Ñanco (4.º año)",
+        "wall": "material/wall/14_4.jpg",
+        "label": "FOTO",
+        "wallSize": [
+          879,
+          1243
+        ],
+        "aspect": 0.707
       }
     ],
-    "textoDetalle": "Río Chico\n“Expo Rural Río Chico”\nTurismo comunitario e identidad local | Presentan: 3.º y 4.º año\n\nUn proyecto que muestra la identidad de Río Chico a partir del trabajo, la historia y la vida cotidiana de su comunidad.\n\n¿Qué vas a descubrir?\n\nUna representación del pueblo junto a distintos sectores locales: ganadería, agricultura, artesanías y ámbito ferroviario.\nUna mirada integral que destaca cómo las actividades y oficios de la comunidad forman parte de su atractivo turístico.\nMaterial fotográfico y audiovisual que acompaña la presentación de la expo.\nLo que hace especial a este proyecto: invita a conocer Río Chico a través de su gente y de las actividades que construyen su identidad día a día.",
+    "textoDetalle": "Río Chico\n“Expo Rural Río Chico”\nTurismo comunitario e identidad local | Presentan: 3.º y 4.º año\n\nUn proyecto que muestra la identidad de Río Chico a partir del trabajo, la historia y la vida cotidiana de su comunidad.\n\n¿Qué vas a descubrir?\n\nUna representación del pueblo junto a distintos sectores locales: ganadería, agricultura, artesanías y ámbito ferroviario.\nUna mirada integral que destaca cómo las actividades y oficios de la comunidad forman parte de su atractivo turístico.\nMaterial fotográfico y audiovisual que acompaña la presentación de la expo.\n\n“Día de Campo” — Matías Ñanco (4.º año)\nPlan de negocios de turismo rural: una experiencia para disfrutar de la naturaleza y la vida rural de Río Chico.\n\nLo que hace especial a este proyecto: invita a conocer Río Chico a través de su gente y de las actividades que construyen su identidad día a día.",
     "textoFuente": "Proyecto turístico junto a ganaderos, agricultores, artesanas y ferroviarios: folletos, videos y fotos del pueblo y sus actividades. 3° y 4° año."
   },
   "15": {
@@ -575,6 +587,19 @@ var MATERIALES={
           1243
         ],
         "aspect": 0.591
+      },
+      {
+        "t": "video",
+        "src": "material/videos/6_video_1.mp4",
+        "title": "Video de la expo",
+        "wall": "material/wall/6_1.jpg",
+        "label": "VIDEO",
+        "wallSize": [
+          478,
+          850
+        ],
+        "aspect": 0.5625,
+        "videoAspect": 0.5625
       }
     ],
     "textoDetalle": "Comicó\n“Sabores de Comicó”\nTurismo gastronómico y cultural | Presenta: 3.º año\n\nUna invitación a conocer Comicó a través de sus sabores, sus costumbres y su vida cotidiana.\n\n¿Qué vas a encontrar?\n\nComidas y bebidas que forman parte de la tradición y del día a día de la comunidad.\nUn espacio pensado para compartir, degustar y aprender sobre las costumbres locales.\nParticipación activa de los visitantes, con propuestas para interactuar y descubrir más sobre la cultura del lugar.\nLo que hace especial a este proyecto: muestra que la gastronomía es una forma de conocer la historia, la identidad y el espíritu de una comunidad.",
